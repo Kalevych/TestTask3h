@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TestTask18Feb</string>
+    <string name="notification_title">Hello to Innovecs</string>
+    <string name="channel_title">Channel title</string>
+    <string name="notification_body">Click me to open contacts and have a nice day!</string>
+    <string name="network_up">Network connection is available</string>
+    <string name="network_down">Error while syncing with network</string>
 </resources>
