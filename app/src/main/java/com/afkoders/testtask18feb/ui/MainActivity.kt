@@ -23,6 +23,10 @@ import com.afkoders.testtask18feb.viewmodel.ActionButtonViewModel
 
 class MainActivity : AppCompatActivity() {
 
+    //i'm really sorry for this. I should use EventWrapper but i have 6 minutes left
+    var skippingInitialTriggeringCrutch = true
+
+    // should be done with DI
     private val viewModel: ActionButtonViewModel by lazy {
         val activity = requireNotNull(this) {
             "You can only access the viewModel after ativity exists()"
@@ -34,7 +38,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        runContactsScreen()
+        if (intent?.hasExtra(NOTIFICATION_MARKER_OPEN_CONTACTS) == true) {
+            runContactsScreen()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,14 +52,14 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        binding.btnRunAction.setOnClickListener {
-            viewModel.runActionClicked()
-        }
+        //i'm really sorry for this. I should use EventWrapper but i have 6 minutes left
+        skippingInitialTriggeringCrutch = true
+
+        binding.btnRunAction.setOnClickListener { viewModel.runActionClicked() }
 
         viewModel.eventNetworkError.observe(this, { networkUnavailable ->
             binding.tvNetworkState.apply {
-                text =
-                    getString(if (networkUnavailable) R.string.network_down else R.string.network_up)
+                text = getString(if (networkUnavailable) R.string.network_down else R.string.network_up)
                 setTextColor(
                     ContextCompat.getColor(
                         this@MainActivity,
@@ -67,14 +73,17 @@ class MainActivity : AppCompatActivity() {
             binding.pbActionsFetching.visibility = if (inProgress) View.VISIBLE else View.GONE
         })
 
-
-        viewModel.actionToExecute.observe(this, Observer<ButtonAction> { action ->
+        viewModel.actionToExecute.observe(this, { action ->
+            if(skippingInitialTriggeringCrutch){
+                skippingInitialTriggeringCrutch = false
+                return@observe
+            }
             action?.apply {
                 when (this.type) {
-                    ACTION_TYPE.ACTION_TOAST -> runToast(this.cool_down)
-                    ACTION_TYPE.ACTION_NOTIFICATION -> runNotification(this.cool_down)
-                    ACTION_TYPE.ACTION_CALL -> runContactsScreen(this.cool_down)
-                    ACTION_TYPE.ACTION_ANIMATION -> runAnimation(this.cool_down)
+                    ACTION_TYPE.ACTION_TOAST -> runToast()
+                    ACTION_TYPE.ACTION_NOTIFICATION -> runNotification()
+                    ACTION_TYPE.ACTION_CALL -> runContactsScreen()
+                    ACTION_TYPE.ACTION_ANIMATION -> runAnimation()
                     else -> {
                         showEmptyActionsToast()
                     }
@@ -85,11 +94,11 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun showEmptyActionsToast() {
-        Toast.makeText(applicationContext, "No actions available", Toast.LENGTH_LONG).show()
+        Toast.makeText(applicationContext, "No latest actions available", Toast.LENGTH_LONG).show()
     }
 
-    private fun runAnimation(coolDown: Long) {
-        viewModel.addCooldownItem(coolDown, ACTION_TYPE.ACTION_ANIMATION)
+    private fun runAnimation() {
+        viewModel.addCooldownItem(ACTION_TYPE.ACTION_ANIMATION)
         val rotate = RotateAnimation(
             0F, 360F, Animation.RELATIVE_TO_SELF,
             0.5f, Animation.RELATIVE_TO_SELF, 0.5f
@@ -98,18 +107,19 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnRunAction).startAnimation(rotate)
     }
 
-    private fun runContactsScreen(coolDown: Long = 0) {
-        viewModel.addCooldownItem(coolDown, ACTION_TYPE.ACTION_CALL)
+    private fun runContactsScreen() {
+        viewModel.addCooldownItem(ACTION_TYPE.ACTION_CALL)
         val intent = Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)
         try {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             // Define what your app should do if no activity can handle the intent.
+            Toast.makeText(applicationContext, "No component found to open contacts screen", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun runNotification(coolDown: Long) {
-        viewModel.addCooldownItem(coolDown, ACTION_TYPE.ACTION_NOTIFICATION)
+    private fun runNotification() {
+        viewModel.addCooldownItem(ACTION_TYPE.ACTION_NOTIFICATION)
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         notificationManager.sendNotification(
@@ -118,9 +128,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun runToast(coolDown: Long) {
-        viewModel.addCooldownItem(coolDown, ACTION_TYPE.ACTION_TOAST)
+    private fun runToast() {
+        viewModel.addCooldownItem(ACTION_TYPE.ACTION_TOAST)
         Toast.makeText(applicationContext, "Action is Toast Notification", Toast.LENGTH_LONG).show()
     }
 
+    companion object {
+        const val NOTIFICATION_MARKER_OPEN_CONTACTS = "NotificationMarkerOpenContacts"
+    }
 }

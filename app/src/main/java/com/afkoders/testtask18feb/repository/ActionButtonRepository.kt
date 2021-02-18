@@ -44,12 +44,10 @@ class ActionButtonRepository(private val database: ButtonActionsDatabase) {
         }
     }
 
-    suspend fun cooldownItemCreated(coolDown: Long, actionType: ACTION_TYPE) {
+    suspend fun cooldownItemCreated(actionType: ACTION_TYPE) {
         withContext(Dispatchers.IO) {
             val coolDownToUpdate =
-                System.currentTimeMillis() +
-                if (coolDown == 0L) availableActions.value?.firstOrNull { it.type == actionType }?.cool_down
-                    ?: 0L else coolDown
+                System.currentTimeMillis() + (availableActions.value?.firstOrNull { it.type == actionType }?.cool_down?:0L)
 
             val cooldownItemDbModel = CooldownItemDbModel(coolDownToUpdate, actionType)
             database.cooldownItemsDao.insertAll(listOf(cooldownItemDbModel))

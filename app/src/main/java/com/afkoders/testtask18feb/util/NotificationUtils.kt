@@ -26,6 +26,7 @@ private val NOTIFICATION_ID = 23323
  */
 
 const val CONST_CHANNEL_ID = "very_secret_channel_id"
+const val NOTIFICATION_MARKER_OPEN_CONTACTS = "NotificationMarkerOpenContacts"
 
 
 fun NotificationManager.sendNotification(messageBody: String, activityContext: Context) {
@@ -42,6 +43,7 @@ fun NotificationManager.sendNotification(messageBody: String, activityContext: C
     // Create the content intent for the notification, which launches
     // this activity
     val contentIntent = Intent(activityContext, MainActivity::class.java)
+    contentIntent.putExtra("NotificationMarkerOpenContacts", true);
 
     val contentPendingIntent = PendingIntent.getActivity(
         activityContext,

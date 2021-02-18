@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.*
 import com.afkoders.testtask18feb.data.database.getDatabase
 import com.afkoders.testtask18feb.domain.models.ACTION_TYPE
-import com.afkoders.testtask18feb.domain.models.CooldownItem
 import com.afkoders.testtask18feb.domain.models.filterValidDays
 import com.afkoders.testtask18feb.domain.models.getHighestPriorityAction
 import com.afkoders.testtask18feb.repository.ActionButtonRepository
@@ -28,9 +27,6 @@ class ActionButtonViewModel(application: Application) : AndroidViewModel(applica
             .getHighestPriorityAction()
     }
 
-    init {
-        // refreshActionsFromNetwork()
-    }
 
     private var _eventNetworkError = MutableLiveData<Boolean>(false)
     val eventNetworkError: LiveData<Boolean>
@@ -45,10 +41,9 @@ class ActionButtonViewModel(application: Application) : AndroidViewModel(applica
         refreshActionFromNetwork()
     }
 
-
-    fun addCooldownItem(coolDown: Long, actionAnimation: ACTION_TYPE) {
+    fun addCooldownItem(actionType: ACTION_TYPE) {
         viewModelScope.launch {
-            actionButtonRepository.cooldownItemCreated(coolDown, actionAnimation)
+            actionButtonRepository.cooldownItemCreated(actionType)
         }
     }
 
@@ -60,8 +55,7 @@ class ActionButtonViewModel(application: Application) : AndroidViewModel(applica
                 _eventNetworkError.value = false
 
             } catch (networkError: IOException) {
-                if (availableActions.value.isNullOrEmpty())
-                    _eventNetworkError.value = true
+                _eventNetworkError.value = true
                 _loading.value = false
             }
         }
